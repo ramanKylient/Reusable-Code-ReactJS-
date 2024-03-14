@@ -25,6 +25,9 @@ function LoginForm() {
     try {
       const signInResponse = await signIn(user);
       console.log(signInResponse); // Do something with the signIn response
+
+      // Assuming signInResponse contains a token
+      localStorage.setItem("token", signInResponse.token);
     } catch (error) {
       console.error("Sign in failed:", error); // Handle sign in error
     }
