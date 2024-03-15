@@ -42,7 +42,7 @@ function LoginForm() {
           item
           xs={false}
           sm={4}
-          md={7}
+          md={6}
           sx={{
             backgroundImage:
               "url(https://source.unsplash.com/random?wallpapers)",
@@ -55,11 +55,11 @@ function LoginForm() {
             backgroundPosition: "center",
           }}
         />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={2} square>
+        <Grid item xs={12} sm={8} md={6} component={Paper} elevation={2} square>
           <Box
             sx={{
-              my: 10,
-              mx: 8,
+              my: 12,
+              mx: 14,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
