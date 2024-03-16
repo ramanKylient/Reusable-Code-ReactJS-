@@ -32,7 +32,7 @@ export const useTokenInfo = () => {
 export const PrivateRoutes = () => {
   const { isValid } = useTokenInfo();
 
-  if (!isValid) {
+  if (isValid) {
     return <Navigate to="/login" />;
   }
 
