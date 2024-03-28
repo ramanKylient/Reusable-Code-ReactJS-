@@ -14,10 +14,14 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { signIn } from "../../utilities/service/auth";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
 
 const defaultTheme = createTheme();
 
 function LoginForm() {
+  const navigate = useNavigate();
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -100,10 +104,34 @@ function LoginForm() {
                 id="password"
                 autoComplete="current-password"
               />
-              <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
-              />
+              <Grid container>
+                <Grid item xs>
+                  <FormControlLabel
+                    control={<Checkbox value="remember" color="primary" />}
+                    label="Remember me"
+                  />
+                </Grid>
+                <Grid item>
+                  <GoogleOAuthProvider
+                    clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
+                  >
+                    <GoogleLogin
+                      onSuccess={(credentialResponse) => {
+                        console.log(credentialResponse);
+                        // Assuming signInResponse contains a token
+                        localStorage.setItem(
+                          "token",
+                          credentialResponse.credential
+                        );
+                        navigate("/");
+                      }}
+                      onError={() => {
+                        console.log("Login Failed");
+                      }}
+                    />
+                  </GoogleOAuthProvider>
+                </Grid>
+              </Grid>{" "}
               <Button
                 type="submit"
                 fullWidth
