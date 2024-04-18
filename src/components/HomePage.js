@@ -21,6 +21,12 @@ import {
   userAdd,
 } from "../utilities/service/User";
 import { Delete as DeleteIcon, Edit as EditIcon } from "@mui/icons-material";
+import {
+  setPage,
+  setPageSize,
+  setTotalItems,
+} from "../redux/state/paginationSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 // Sample data
 const rows = [
@@ -282,17 +288,22 @@ function HomePage() {
   const [open, setOpen] = useState(false); // State for modal open/close
   const [users, setUsers] = useState([]); // State to hold user data
   const [selectedRow, setSelectedRow] = useState(null); // State for selected row data
+  const { page, pageSize, totalItems } = useSelector(
+    (state) => state.pagination.usersPagination
+  );
+  const dispatch = useDispatch();
 
   useEffect(() => {
     // Fetch user data when component mounts
     fetchUserData();
-  }, []);
+  }, [page, pageSize]);
 
   // Function to fetch user data
   const fetchUserData = async () => {
     try {
-      const userData = await getUser(); // Fetch user data from the server
+      const userData = await getUser({ page, pageSize }); // Fetch user data from the server
       setUsers(userData); // Set user data in state
+      dispatch(setTotalItems(userData.totalUsers));
     } catch (error) {
       // Show error toast if fetching fails
       console.log("Failed to fetch user data");
@@ -411,10 +422,19 @@ function HomePage() {
           <DataGrid
             rows={rows || users}
             columns={columns}
-            initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
-            pageSizeOptions={[5, 10, 15, 20]}
             checkboxSelection
             disableRowSelectionOnClick
+            // paginationMode="server"
+            // pagination
+            // pageSize={pageSize}
+            // rowCount={totalItems}
+            // rowsPerPageOptions={[10, 25, 50, 100]}
+            // onPageChange={(newPage) => {
+            //   dispatch(setPage(newPage + 1));
+            // }}
+            // onPageSizeChange={(newPageSize) =>
+            //   dispatch(setPageSize(newPageSize))
+            // }
           />
           {/* Modal for adding/editing user */}
           <AddNewModal

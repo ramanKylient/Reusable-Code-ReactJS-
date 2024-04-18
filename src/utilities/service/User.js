@@ -30,10 +30,15 @@ export const updateUser = async (userId, updatedUserData) => {
 };
 
 // Exporting getUser function
-export const getUser = async (userId) => {
+export const getUser = async ({ page, pageSize }) => {
   try {
     // Make a GET request to the server using axios
-    const response = await axiosHandler.get(`/user/${userId}`);
+    const response = await axiosHandler.get("/user/details", {
+      params: {
+        page: page,
+        limit: pageSize,
+      },
+    });
     // If the request is successful, return the response data
     return response.data;
   } catch (error) {
