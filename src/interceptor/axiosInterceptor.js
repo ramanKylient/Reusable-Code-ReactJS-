@@ -12,7 +12,7 @@ console.log("baseURL", process.env.REACT_APP_BASE_URL);
 axiosHandler.interceptors.request.use(
   async (config) => {
     try {
-      if (!config.url.includes("/auth/sign-in")) {
+      if (!config.url.includes("/auth/admin/sign-in")) {
         const token = localStorage.getItem("token");
         if (token !== undefined && token !== null) {
           config.headers["Authorization"] = `Bearer ${token}`;
