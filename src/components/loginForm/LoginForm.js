@@ -36,6 +36,10 @@ function LoginForm() {
 
       // Assuming signInResponse contains a token
       localStorage.setItem("token", signInResponse.token);
+      navigate("/");
+      setTimeout(() => {
+        toast.success("Login successfully!");
+      }, 300);
     } catch (error) {
       console.error("Sign in failed:", error); // Handle sign in error
     }
