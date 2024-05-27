@@ -18,7 +18,7 @@ export const updateUser = async (userId, updatedUserData) => {
   try {
     // Make a PUT request to the server using axios
     const response = await axiosHandler.put(
-      `/user/update/${userId}`,
+      `/user/edit-user/${userId}`,
       updatedUserData
     );
     // If the request is successful, return the response data
@@ -30,10 +30,10 @@ export const updateUser = async (userId, updatedUserData) => {
 };
 
 // Exporting getUser function
-export const getUser = async (userId) => {
+export const getUser = async () => {
   try {
     // Make a GET request to the server using axios
-    const response = await axiosHandler.get(`/user/${userId}`);
+    const response = await axiosHandler.get(`/user/details`);
     // If the request is successful, return the response data
     return response.data;
   } catch (error) {
