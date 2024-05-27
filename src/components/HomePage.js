@@ -426,6 +426,7 @@ function HomePage() {
 
       // Call deleteUser function with userId to delete the user
       await deleteUser(row.id);
+      fetchUserData();
       // Show success toast
       toast.success("User deleted successfully");
       // You may want to update your data source after deletion
