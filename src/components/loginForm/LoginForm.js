@@ -59,12 +59,9 @@ function LoginForm() {
             md={6}
             sx={{
               backgroundImage:
-                "url(https://source.unsplash.com/random?wallpapers)",
+                "url(logo512.png)",
               backgroundRepeat: "no-repeat",
-              backgroundColor: (t) =>
-                t.palette.mode === "light"
-                  ? t.palette.grey[50]
-                  : t.palette.grey[900],
+              backgroundColor: "#282c34",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
