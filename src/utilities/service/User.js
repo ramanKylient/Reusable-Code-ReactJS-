@@ -18,7 +18,7 @@ export const updateUser = async (userId, updatedUserData) => {
   try {
     // Make a PUT request to the server using axios
     const response = await axiosHandler.put(
-      `/user/update/${userId}`,
+      `/user/edit-user/${userId}`,
       updatedUserData
     );
     // If the request is successful, return the response data
@@ -33,7 +33,7 @@ export const updateUser = async (userId, updatedUserData) => {
 export const getUser = async ({ page, pageSize }) => {
   try {
     // Make a GET request to the server using axios
-    const response = await axiosHandler.get("/user/details", {
+    const response = await axiosHandler.get(`/user/details`, {
       params: {
         page: page,
         limit: pageSize,
@@ -51,7 +51,7 @@ export const getUser = async ({ page, pageSize }) => {
 export const deleteUser = async (userId) => {
   try {
     // Make a DELETE request to the server using axios
-    const response = await axiosHandler.delete(`/user/delete/${userId}`);
+    const response = await axiosHandler.delete(`/user/delete-user/${userId}`);
     // If the request is successful, return the response data
     return response.data;
   } catch (error) {

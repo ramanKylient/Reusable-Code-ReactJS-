@@ -32,7 +32,12 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+.css-z3c6am-MuiFormControl-root-MuiTextField-root {
+  min-width: 100% !important;
 }

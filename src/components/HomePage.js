@@ -4,9 +4,12 @@ import { DataGrid } from "@mui/x-data-grid";
 import {
   Button,
   Container,
+  FormControlLabel,
   Grid,
   IconButton,
+  MenuItem,
   Modal,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -20,7 +23,17 @@ import {
   updateUser,
   userAdd,
 } from "../utilities/service/User";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import {
+  LocalizationProvider,
+  DatePicker,
+  DateTimePicker,
+  TimePicker,
+} from "@mui/x-date-pickers";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css"; // Import the styles
 import { Delete as DeleteIcon, Edit as EditIcon } from "@mui/icons-material";
+import dayjs from "dayjs";
 import {
   setPage,
   setPageSize,
@@ -28,148 +41,95 @@ import {
 } from "../redux/state/paginationSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-// Sample data
-const rows = [
-  {
-    id: 1,
-    lastName: "Snow",
-    firstName: "Jon",
-    age: 14,
-    email: "jon.snow@example.com",
-  },
-  {
-    id: 2,
-    lastName: "Lannister",
-    firstName: "Cersei",
-    age: 31,
-    email: "cersei.lannister@example.com",
-  },
-  {
-    id: 3,
-    lastName: "Lannister",
-    firstName: "Jaime",
-    age: 31,
-    email: "jaime.lannister@example.com",
-  },
-  {
-    id: 4,
-    lastName: "Stark",
-    firstName: "Arya",
-    age: 11,
-    email: "arya.stark@example.com",
-  },
-  {
-    id: 5,
-    lastName: "Targaryen",
-    firstName: "Daenerys",
-    age: null,
-    email: "daenerys.targaryen@example.com",
-  },
-  {
-    id: 6,
-    lastName: "Melisandre",
-    firstName: null,
-    age: 150,
-    email: "melisandre@example.com",
-  },
-  {
-    id: 7,
-    lastName: "Clifford",
-    firstName: "Ferrara",
-    age: 44,
-    email: "ferrara.clifford@example.com",
-  },
-  {
-    id: 8,
-    lastName: "Frances",
-    firstName: "Rossini",
-    age: 36,
-    email: "rossini.frances@example.com",
-  },
-  {
-    id: 9,
-    lastName: "Roxie",
-    firstName: "Harvey",
-    age: 65,
-    email: "harvey.roxie@example.com",
-  },
-  {
-    id: 10,
-    lastName: "Doe",
-    firstName: "John",
-    age: 30,
-    email: "john.doe@example.com",
-  },
-  {
-    id: 11,
-    lastName: "Smith",
-    firstName: "Jane",
-    age: 25,
-    email: "jane.smith@example.com",
-  },
-  {
-    id: 12,
-    lastName: "Johnson",
-    firstName: "Michael",
-    age: 40,
-    email: "michael.johnson@example.com",
-  },
-  {
-    id: 13,
-    lastName: "Williams",
-    firstName: "Emily",
-    age: 28,
-    email: "emily.williams@example.com",
-  },
-  {
-    id: 14,
-    lastName: "Brown",
-    firstName: "David",
-    age: 35,
-    email: "david.brown@example.com",
-  },
-  {
-    id: 15,
-    lastName: "Jones",
-    firstName: "Emma",
-    age: 22,
-    email: "emma.jones@example.com",
-  },
-];
-
 // AddNewModal component for adding/editing a user
-function AddNewModal({ open, onClose, initialValues }) {
+function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
+  const userId = selectedRow?.id;
   const handleClose = () => {
     onClose();
   };
 
+  const initialValues = {
+    fullName: selectedRow?.fullName ?? "",
+    email: selectedRow?.email ?? "",
+    password: "",
+    gender: selectedRow?.gender ?? "",
+    contactNo: selectedRow?.contactNo ?? "",
+    date: selectedRow?.date ? dayjs(selectedRow.date) : null,
+    dateTime: selectedRow?.dateTime ? dayjs(selectedRow.dateTime) : null,
+    time: selectedRow?.time ? dayjs(selectedRow.time, "HH:mm:ss") : null,
+    address: selectedRow?.address ?? "",
+    color: selectedRow?.color ?? "#000000",
+    bio: selectedRow?.bio ?? "",
+    isActive: selectedRow?.isActive === 1 ? true : false,
+  };
+
   // Form validation schema using Yup
   const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required("First Name is required"),
-    lastName: Yup.string().required("Last Name is required"),
+    fullName: Yup.string().required("Full Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
-    age: Yup.number()
-      .typeError("Age must be a number")
-      .positive("Age must be a positive number")
-      .integer("Age must be an integer")
-      .required("Age is required"),
+    contactNo: Yup.string()
+      .matches(/^[0-9]{10}$/, "Invalid Contact No number")
+      .required("Contact No number is required"),
+    gender: Yup.string().required("Gender is required"),
+    address: Yup.string().required("Address is required"),
+    color: Yup.string().required("Color is required"),
+    date: Yup.string().required("Date is required"),
+    dateTime: Yup.string().required("Date Time is required"),
+    time: Yup.string().required("Time is required"),
+    ...(userId
+      ? {}
+      : {
+          password: Yup.string()
+            .required("Password is required")
+            .min(8, "Password should be at least 8 characters long")
+            .matches(
+              /[a-z]/,
+              "Password must contain at least one lowercase letter"
+            )
+            .matches(
+              /[A-Z]/,
+              "Password must contain at least one uppercase letter"
+            )
+            .matches(/[0-9]/, "Password must contain at least one number")
+            .matches(
+              /[!@#$%^&*(),.?":{}|<>]/,
+              "Password must contain at least one special character"
+            ),
+        }),
   });
 
   // Form submission handler
   const handleSubmit = async (values, actions) => {
     try {
-      if (values.id) {
+      const updatedValues = {
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password,
+        contactNo: values.contactNo,
+        gender: values.gender,
+        date: dayjs(values.date).format("YYYY-MM-DD"),
+        dateTime: dayjs(values.dateTime).format("YYYY-MM-DDTHH:mm:ss"),
+        time: dayjs(values.time).format("HH:mm:ss"),
+        address: values.address,
+        color: values.color,
+        bio: values.bio,
+        isActive: values.isActive ? 1 : 0,
+      };
+
+      if (userId) {
         // If id exists, it's an update operation
-        await updateUser(values.id, values);
+        delete updatedValues.password; // Remove password for update operation
+        await updateUser(userId, updatedValues);
         toast.success("Record updated successfully!");
       } else {
         // If id doesn't exist, it's an add operation
-        await userAdd(values);
+        await userAdd(updatedValues);
         toast.success("New record added successfully!");
       }
 
-      console.log(values); // Log form values
+      // console.log(values); // Log form values
       actions.setSubmitting(false); // Reset form submission state
+      fetchUserData();
       onClose(); // Close the modal
     } catch (error) {
       console.error("Error:", error); // Log error
@@ -190,13 +150,13 @@ function AddNewModal({ open, onClose, initialValues }) {
           boxShadow: 24,
           p: 3,
           minWidth: 300,
+          maxHeight: "80vh",
+          overflow: "auto",
         }}
       >
         <Typography variant="h6" align="left" gutterBottom>
-          {initialValues.id ? "Edit" : "Add New"}{" "}
-          {/* Display modal title based on whether it's an add or edit operation */}
+          {userId ? "Edit" : "Add New"}
         </Typography>
-        {/* Formik form for user input */}
         <Formik
           initialValues={initialValues}
           validationSchema={validationSchema}
@@ -207,31 +167,16 @@ function AddNewModal({ open, onClose, initialValues }) {
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <TextField
-                    name="firstName"
-                    label="First Name"
+                    name="fullName"
+                    label="Full Name"
                     fullWidth
                     variant="outlined"
-                    {...formik.getFieldProps("firstName")}
+                    {...formik.getFieldProps("fullName")}
                     error={Boolean(
-                      formik.touched.firstName && formik.errors.firstName
+                      formik.touched.fullName && formik.errors.fullName
                     )}
                     helperText={
-                      formik.touched.firstName && formik.errors.firstName
-                    }
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    name="lastName"
-                    label="Last Name"
-                    fullWidth
-                    variant="outlined"
-                    {...formik.getFieldProps("lastName")}
-                    error={Boolean(
-                      formik.touched.lastName && formik.errors.lastName
-                    )}
-                    helperText={
-                      formik.touched.lastName && formik.errors.lastName
+                      formik.touched.fullName && formik.errors.fullName
                     }
                   />
                 </Grid>
@@ -246,33 +191,185 @@ function AddNewModal({ open, onClose, initialValues }) {
                     helperText={formik.touched.email && formik.errors.email}
                   />
                 </Grid>
+
+                {!userId && ( // Show password field only when adding new user
+                  <Grid item xs={6}>
+                    <TextField
+                      name="password"
+                      label="Password"
+                      fullWidth
+                      variant="outlined"
+                      type="password"
+                      {...formik.getFieldProps("password")}
+                      error={Boolean(
+                        formik.touched.password && formik.errors.password
+                      )}
+                      helperText={
+                        formik.touched.password && formik.errors.password
+                      }
+                    />
+                  </Grid>
+                )}
+
                 <Grid item xs={6}>
                   <TextField
-                    name="age"
-                    label="Age"
+                    name="contactNo"
+                    label="Contact No"
                     fullWidth
                     variant="outlined"
                     type="number"
-                    {...formik.getFieldProps("age")}
-                    error={Boolean(formik.touched.age && formik.errors.age)}
-                    helperText={formik.touched.age && formik.errors.age}
+                    {...formik.getFieldProps("contactNo")}
+                    error={Boolean(
+                      formik.touched.contactNo && formik.errors.contactNo
+                    )}
+                    helperText={
+                      formik.touched.contactNo && formik.errors.contactNo
+                    }
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Date"
+                      value={formik.values.date}
+                      onChange={(value) => formik.setFieldValue("date", value)}
+                      textField={(params) => (
+                        <TextField
+                          {...params}
+                          fullWidth
+                          variant="outlined"
+                          error={Boolean(
+                            formik.touched.date && formik.errors.date
+                          )}
+                          helperText={formik.touched.date && formik.errors.date}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                </Grid>
+                <Grid item xs={6}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DateTimePicker
+                      label="Date Time"
+                      value={formik.values.dateTime}
+                      onChange={(value) =>
+                        formik.setFieldValue("dateTime", value)
+                      }
+                      textField={(params) => (
+                        <TextField
+                          {...params}
+                          fullWidth
+                          variant="outlined"
+                          error={Boolean(
+                            formik.touched.dateTime && formik.errors.dateTime
+                          )}
+                          helperText={
+                            formik.touched.dateTime && formik.errors.dateTime
+                          }
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                </Grid>
+                <Grid item xs={6}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <TimePicker
+                      label="Time"
+                      value={formik.values.time}
+                      onChange={(value) => formik.setFieldValue("time", value)}
+                      textField={(params) => (
+                        <TextField
+                          {...params}
+                          fullWidth
+                          variant="outlined"
+                          error={Boolean(
+                            formik.touched.time && formik.errors.time
+                          )}
+                          helperText={formik.touched.time && formik.errors.time}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    name="gender"
+                    label="Gender"
+                    fullWidth
+                    variant="outlined"
+                    select
+                    {...formik.getFieldProps("gender")}
+                    error={Boolean(
+                      formik.touched.gender && formik.errors.gender
+                    )}
+                    helperText={formik.touched.gender && formik.errors.gender}
+                  >
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    name="color"
+                    label="Color"
+                    fullWidth
+                    variant="outlined"
+                    type="color"
+                    {...formik.getFieldProps("color")}
+                    error={Boolean(formik.touched.color && formik.errors.color)}
+                    helperText={formik.touched.color && formik.errors.color}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formik.values.isActive}
+                        onChange={(event) =>
+                          formik.setFieldValue("isActive", event.target.checked)
+                        }
+                        color="primary"
+                      />
+                    }
+                    label="Active"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    name="address"
+                    label="Address"
+                    fullWidth
+                    variant="outlined"
+                    multiline
+                    rows={2}
+                    {...formik.getFieldProps("address")}
+                    error={Boolean(
+                      formik.touched.address && formik.errors.address
+                    )}
+                    helperText={formik.touched.address && formik.errors.address}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Bio
+                  </Typography>
+                  <ReactQuill
+                    value={formik.values.bio}
+                    onChange={(value) => formik.setFieldValue("bio", value)}
                   />
                 </Grid>
               </Grid>
-
               {/* Submit and Cancel buttons */}
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <Button size="small" onClick={onClose}>
-                  Cancel
-                </Button>
+                <Button onClick={handleClose}>Cancel</Button>
                 <Button
                   type="submit"
                   variant="contained"
-                  size="small"
                   disabled={formik.isSubmitting}
                   sx={{ ml: 2 }}
                 >
-                  Submit
+                  {userId ? "Update" : "Submit"}
                 </Button>
               </Box>
             </Form>
@@ -293,22 +390,21 @@ function HomePage() {
   );
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    // Fetch user data when component mounts
-    fetchUserData();
-  }, [page, pageSize]);
-
   // Function to fetch user data
   const fetchUserData = async () => {
     try {
       const userData = await getUser({ page, pageSize }); // Fetch user data from the server
-      setUsers(userData); // Set user data in state
-      dispatch(setTotalItems(userData.totalUsers));
+      setUsers(userData.data); // Set user data in state
+      dispatch(setTotalItems(userData.totalPages));
     } catch (error) {
       // Show error toast if fetching fails
       console.log("Failed to fetch user data");
     }
   };
+
+  useEffect(() => {
+    fetchUserData();
+  }, [page, pageSize]);
 
   // Function to open modal for adding/editing user
   const handleOpenModal = (row) => {
@@ -341,6 +437,7 @@ function HomePage() {
 
       // Call deleteUser function with userId to delete the user
       await deleteUser(row.id);
+      fetchUserData();
       // Show success toast
       toast.success("User deleted successfully");
       // You may want to update your data source after deletion
@@ -355,34 +452,41 @@ function HomePage() {
   const columns = [
     { field: "id", headerName: "ID", width: 50 },
     {
-      field: "firstName",
-      headerName: "First name",
-      width: 150,
-      editable: true,
-    },
-    {
-      field: "lastName",
-      headerName: "Last name",
-      width: 150,
-      editable: true,
+      field: "fullName",
+      headerName: "Full Name",
     },
     {
       field: "email",
       headerName: "Email",
-      width: 200,
-      editable: true,
     },
     {
-      field: "age",
-      headerName: "Age",
+      field: "contactNo",
+      headerName: "Contact No",
       type: "number",
-      width: 100,
-      editable: true,
+    },
+    {
+      field: "gender",
+      headerName: "Gender",
+    },
+    {
+      field: "date",
+      headerName: "Date",
+    },
+    {
+      field: "dateTime",
+      headerName: "Date Time",
+    },
+    {
+      field: "time",
+      headerName: "Time",
+    },
+    {
+      field: "address",
+      headerName: "Address",
     },
     {
       field: "action",
       headerName: "Action",
-      width: 110,
       renderCell: (params) => (
         <div>
           <IconButton
@@ -420,29 +524,28 @@ function HomePage() {
           </Box>
           {/* DataGrid for displaying users */}
           <DataGrid
-            rows={rows || users}
+            rows={users}
             columns={columns}
             checkboxSelection
             disableRowSelectionOnClick
-            // paginationMode="server"
-            // pagination
-            // pageSize={pageSize}
-            // rowCount={totalItems}
-            // rowsPerPageOptions={[10, 25, 50, 100]}
-            // onPageChange={(newPage) => {
-            //   dispatch(setPage(newPage + 1));
-            // }}
-            // onPageSizeChange={(newPageSize) =>
-            //   dispatch(setPageSize(newPageSize))
-            // }
+            paginationMode="server"
+            pagination
+            pageSize={pageSize}
+            rowCount={totalItems}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            onPageChange={(newPage) => {
+              dispatch(setPage(newPage + 1));
+            }}
+            onPageSizeChange={(newPageSize) =>
+              dispatch(setPageSize(newPageSize))
+            }
           />
           {/* Modal for adding/editing user */}
           <AddNewModal
             open={open}
             onClose={handleCloseModal}
-            initialValues={
-              selectedRow || { firstName: "", lastName: "", email: "", age: "" }
-            } // Initial values for form
+            selectedRow={selectedRow} // Initial values for form
+            fetchUserData={fetchUserData}
           />
           <ToastContainer /> {/* Container for displaying toasts */}
         </Box>
