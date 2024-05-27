@@ -46,7 +46,7 @@ export const getUser = async () => {
 export const deleteUser = async (userId) => {
   try {
     // Make a DELETE request to the server using axios
-    const response = await axiosHandler.delete(`/user/delete/${userId}`);
+    const response = await axiosHandler.delete(`/user/delete-user/${userId}`);
     // If the request is successful, return the response data
     return response.data;
   } catch (error) {

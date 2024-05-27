@@ -45,7 +45,7 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
   const initialValues = {
     fullName: selectedRow?.fullName ?? "",
     email: selectedRow?.email ?? "",
-    password: selectedRow?.password ?? "",
+    password: "",
     gender: selectedRow?.gender ?? "",
     contactNo: selectedRow?.contactNo ?? "",
     date: selectedRow?.date ? dayjs(selectedRow.date) : null,
@@ -60,16 +60,6 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
   // Form validation schema using Yup
   const validationSchema = Yup.object().shape({
     fullName: Yup.string().required("Full Name is required"),
-    password: Yup.string()
-      .required("Password is required")
-      .min(8, "Password should be at least 8 characters long")
-      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[0-9]/, "Password must contain at least one number")
-      .matches(
-        /[!@#$%^&*(),.?":{}|<>]/,
-        "Password must contain at least one special character"
-      ),
     email: Yup.string().email("Invalid email").required("Email is required"),
     contactNo: Yup.string()
       .matches(/^[0-9]{10}$/, "Invalid Contact No number")
@@ -80,6 +70,26 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
     date: Yup.string().required("Date is required"),
     dateTime: Yup.string().required("Date Time is required"),
     time: Yup.string().required("Time is required"),
+    ...(userId
+      ? {}
+      : {
+          password: Yup.string()
+            .required("Password is required")
+            .min(8, "Password should be at least 8 characters long")
+            .matches(
+              /[a-z]/,
+              "Password must contain at least one lowercase letter"
+            )
+            .matches(
+              /[A-Z]/,
+              "Password must contain at least one uppercase letter"
+            )
+            .matches(/[0-9]/, "Password must contain at least one number")
+            .matches(
+              /[!@#$%^&*(),.?":{}|<>]/,
+              "Password must contain at least one special character"
+            ),
+        }),
   });
 
   // Form submission handler
@@ -102,6 +112,7 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
 
       if (userId) {
         // If id exists, it's an update operation
+        delete updatedValues.password; // Remove password for update operation
         await updateUser(userId, updatedValues);
         toast.success("Record updated successfully!");
       } else {
@@ -174,7 +185,8 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
                     helperText={formik.touched.email && formik.errors.email}
                   />
                 </Grid>
-                {!userId && (
+
+                {!userId && ( // Show password field only when adding new user
                   <Grid item xs={6}>
                     <TextField
                       name="password"
@@ -192,6 +204,7 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
                     />
                   </Grid>
                 )}
+
                 <Grid item xs={6}>
                   <TextField
                     name="contactNo"
