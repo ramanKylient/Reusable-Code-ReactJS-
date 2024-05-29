@@ -12,6 +12,8 @@ import {
   Switch,
   TextField,
   Typography,
+  CircularProgress,
+  Avatar,
 } from "@mui/material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -40,9 +42,16 @@ import {
   setTotalItems,
 } from "../redux/state/paginationSlice";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  downloadResource,
+  handleFileUpload,
+} from "../utilities/firebaseFunctions";
 
 // AddNewModal component for adding/editing a user
 function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
+  const [previewImage, setPreviewImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const userId = selectedRow?.id;
   const handleClose = () => {
     onClose();
@@ -61,6 +70,7 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
     color: selectedRow?.color ?? "#000000",
     bio: selectedRow?.bio ?? "",
     isActive: selectedRow?.isActive === 1 ? true : false,
+    profileImage: selectedRow?.profileImage ?? null,
   };
 
   // Form validation schema using Yup
@@ -114,6 +124,7 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
         color: values.color,
         bio: values.bio,
         isActive: values.isActive ? 1 : 0,
+        profileImage: values.profileImage,
       };
 
       if (userId) {
@@ -135,6 +146,30 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
       console.error("Error:", error); // Log error
       toast.error("Failed to add/update record. Please try again."); // Show error toast
       actions.setSubmitting(false); // Reset form submission state
+    }
+  };
+
+  const handleFileChange = async (e, setFieldValue) => {
+    try {
+      const file = e.target.files[0];
+
+      // Ensure a file is selected
+      if (!file) {
+        throw new Error("No file selected.");
+      }
+
+      setIsLoading(true);
+
+      // Upload the file and get the download URL
+      const url = await handleFileUpload(file);
+
+      // Update form data with the download URL
+      setFieldValue("profileImage", url);
+      setPreviewImage(URL.createObjectURL(file));
+    } catch (error) {
+      console.error("Error handling file change:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -335,6 +370,36 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
                     label="Active"
                   />
                 </Grid>
+                <Grid item xs={6}>
+                  <Button component="label" variant="outlined">
+                    {isLoading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      "Upload Image"
+                    )}{" "}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleFileChange(e, formik.setFieldValue)
+                      }
+                      style={{ display: "none" }}
+                    />
+                  </Button>
+                </Grid>
+                {!userId && (
+                  <Grid item xs={6}>
+                    {previewImage && (
+                      <Box mt={2}>
+                        <img
+                          src={previewImage}
+                          alt="Profile Preview"
+                          style={{ width: "50%", maxHeight: "100px" }}
+                        />
+                      </Box>
+                    )}
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <TextField
                     name="address"
@@ -394,6 +459,23 @@ function HomePage() {
   const fetchUserData = async () => {
     try {
       const userData = await getUser({ page, pageSize }); // Fetch user data from the server
+
+      // Download profile images for each user in parallel
+      await Promise.all(
+        userData.data.map(async (user) => {
+          if (user.profileImage) {
+            try {
+              const downloadURL = await downloadResource(user.profileImage);
+              user.profileImageURL = downloadURL; // Add the download URL to the user object
+            } catch (error) {
+              console.error(
+                `Failed to download profile image for user ${user.id}`
+              );
+            }
+          }
+        })
+      );
+
       setUsers(userData.data); // Set user data in state
       dispatch(setTotalItems(userData.totalPages));
     } catch (error) {
@@ -451,6 +533,14 @@ function HomePage() {
   // Columns definition for DataGrid
   const columns = [
     { field: "id", headerName: "ID", width: 50 },
+    {
+      field: "profileImageURL",
+      headerName: "Profile",
+      width: 100,
+      renderCell: (params) => {
+        return <Avatar src={params.value} alt="Profile Image" />;
+      },
+    },
     {
       field: "fullName",
       headerName: "Full Name",
