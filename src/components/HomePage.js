@@ -131,10 +131,12 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
         // If id exists, it's an update operation
         delete updatedValues.password; // Remove password for update operation
         await updateUser(userId, updatedValues);
+        setPreviewImage(null);
         toast.success("Record updated successfully!");
       } else {
         // If id doesn't exist, it's an add operation
         await userAdd(updatedValues);
+        setPreviewImage(null);
         toast.success("New record added successfully!");
       }
 
@@ -387,19 +389,17 @@ function AddNewModal({ open, onClose, selectedRow, fetchUserData }) {
                     />
                   </Button>
                 </Grid>
-                {!userId && (
-                  <Grid item xs={6}>
-                    {previewImage && (
-                      <Box mt={2}>
-                        <img
-                          src={previewImage}
-                          alt="Profile Preview"
-                          style={{ width: "50%", maxHeight: "100px" }}
-                        />
-                      </Box>
-                    )}
-                  </Grid>
-                )}
+                <Grid item xs={6}>
+                  {previewImage && (
+                    <Box mt={2}>
+                      <img
+                        src={previewImage}
+                        alt="Profile Preview"
+                        style={{ width: "50%", maxHeight: "100px" }}
+                      />
+                    </Box>
+                  )}
+                </Grid>
                 <Grid item xs={12}>
                   <TextField
                     name="address"
