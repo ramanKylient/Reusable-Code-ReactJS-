@@ -2,7 +2,6 @@ import * as React from "react";
 import CssBaseline from "@mui/material/CssBaseline";
 import {
   Avatar,
-  Button,
   Checkbox,
   FormControlLabel,
   Box,
@@ -11,6 +10,7 @@ import {
   Grid,
   Paper,
 } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { signIn } from "../../utilities/service/auth";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -22,10 +22,12 @@ import "react-toastify/dist/ReactToastify.css"; // Import the CSS
 const defaultTheme = createTheme();
 
 function LoginForm() {
+  const [loading, setLoading] = React.useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true); // Set loading state to true
     const data = new FormData(event.currentTarget);
     const user = {
       email: data.get("email"),
@@ -44,6 +46,12 @@ function LoginForm() {
       }, 300);
     } catch (error) {
       console.error("Sign in failed:", error); // Handle sign in error
+      // Assuming error response has a message field
+      const errorMessage =
+        error.response?.data?.message || "An error occurred. Please try again.";
+      toast.error(`Sign in failed: ${errorMessage}`);
+    } finally {
+      setLoading(false); // Set loading state to false
     }
   };
 
@@ -58,8 +66,7 @@ function LoginForm() {
             sm={4}
             md={6}
             sx={{
-              backgroundImage:
-                "url(logo512.png)",
+              backgroundImage: "url(logo512.png)",
               backgroundRepeat: "no-repeat",
               backgroundColor: "#282c34",
               backgroundSize: "cover",
@@ -147,14 +154,16 @@ function LoginForm() {
                     </GoogleOAuthProvider>
                   </Grid>
                 </Grid>{" "}
-                <Button
+                <LoadingButton
+                  loading={loading} // Use loading state here
+                  loadingPosition="start"
                   type="submit"
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2 }}
                 >
                   Sign In
-                </Button>
+                </LoadingButton>
               </Box>
             </Box>
           </Grid>

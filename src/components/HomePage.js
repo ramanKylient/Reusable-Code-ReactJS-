@@ -450,6 +450,8 @@ function HomePage() {
   const [open, setOpen] = useState(false); // State for modal open/close
   const [users, setUsers] = useState([]); // State to hold user data
   const [selectedRow, setSelectedRow] = useState(null); // State for selected row data
+  const [loading, setLoading] = useState(false); // State for loading indicator
+
   const { page, pageSize, totalItems } = useSelector(
     (state) => state.pagination.usersPagination
   );
@@ -457,6 +459,8 @@ function HomePage() {
 
   // Function to fetch user data
   const fetchUserData = async () => {
+    setLoading(true); // Set loading state to true before fetching data
+
     try {
       const userData = await getUser({ page, pageSize }); // Fetch user data from the server
 
@@ -481,6 +485,8 @@ function HomePage() {
     } catch (error) {
       // Show error toast if fetching fails
       console.log("Failed to fetch user data");
+    } finally {
+      setLoading(false); // Set loading state to false after fetching data
     }
   };
 
@@ -620,6 +626,7 @@ function HomePage() {
             disableRowSelectionOnClick
             paginationMode="server"
             pagination
+            loading={loading} // Add loading state to DataGrid
             pageSize={pageSize}
             rowCount={totalItems}
             rowsPerPageOptions={[10, 25, 50, 100]}
